@@ -2,6 +2,8 @@
 #madre e hijo.
 
 library(dplyr)
+install.packages("devtools")
+devtools::install_github("PhanstielLab/bedtoolsr")
 
 #Después de cargar la base de Genes de TEA y la de biomart, eliminamos la única
 #instancia de gen que no tiene nombre. Tampoco consta en la base de biomart por
@@ -37,7 +39,29 @@ genes_intersect$Gene.Synonym <- NULL
 #Quitamos los duplicados de los genes incluidos por los sinónimos.
 genes_no_dup <- genes_intersect %>% distinct(Gene.name, .keep_all = TRUE)
 
+new_column_names <- c("ENSEMBLE_ID", "Start", "End", "Chr", "GENE_NAME")
+
+colnames(genes_no_dup)[colnames(genes_no_dup) %in% c("Gene.stable.ID", 
+       "Gene.start..bp.", "Gene.end..bp.", "Chromosome.scaffold.name", 
+       "Gene.name")] <- new_column_names
+
+
+GENES_FILTRADO <- genes_no_dup %>%
+  select(Chr, Start, End, GENE_NAME, ENSEMBLE_ID)
+
+GENES_FILTRADO$Start <- GENES_FILTRADO$Start - 1
+GENES_FILTRADO$Chr <- paste0("chr", GENES_FILTRADO$Chr)
+
+
+#Guardar archivo con formato .bed del conjunto de genes a filtrar con bedtools
+write.table(GENES_FILTRADO, "GENES_FILTRADO.bed", sep = "\t", quote = F, 
+            col.names = F, row.names = F)
+
+G01.GEA.10.HI.split.tab$Start <- G01.GEA.10.HI.split.tab$Start -1 
+write.table(G01.GEA.10.HI.split.tab, "Prueba_pac10.bed", sep = "\t", quote = FALSE, 
+            row.names = FALSE, col.names = FALSE)
+
 #
-system("bedtools intersect -a Exoma_HGUGM.bed -b GENE_BBDD.bed > intersect.bed")
+system("bedtools intersect -a Prueba_pac10.bed -b GENES_FILTRADO.bed > intersect.bed")
 
 
