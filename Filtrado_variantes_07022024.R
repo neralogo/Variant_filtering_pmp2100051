@@ -49,7 +49,6 @@ colnames(genes_no_dup)[colnames(genes_no_dup) %in% c("Gene.stable.ID",
 GENES_FILTRADO <- genes_no_dup %>%
   select(Chr, Start, End, GENE_NAME, ENSEMBLE_ID)
 
-GENES_FILTRADO$Start <- GENES_FILTRADO$Start - 1
 GENES_FILTRADO$Chr <- paste0("chr", GENES_FILTRADO$Chr)
 
 
@@ -58,6 +57,7 @@ write.table(GENES_FILTRADO, "GENES_FILTRADO.bed", sep = "\t", quote = F,
             col.names = F, row.names = F)
 
 G01.GEA.10.HI.split.tab$Start <- G01.GEA.10.HI.split.tab$Start -1 
+G01.GEA.10.HI.split.tab$Chr <- paste0("chr", G01.GEA.10.HI.split.tab$Chr)
 write.table(G01.GEA.10.HI.split.tab, "Prueba_pac10.bed", sep = "\t", quote = FALSE, 
             row.names = FALSE, col.names = FALSE)
 
