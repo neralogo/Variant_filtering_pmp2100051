@@ -34,3 +34,10 @@ rm(temp)
 #Quitamos la columna de nombres de genes sinónimos
 genes_intersect$Gene.Synonym <- NULL
 
+#Quitamos los duplicados de los genes incluidos por los sinónimos.
+genes_no_dup <- genes_intersect %>% distinct(Gene.name, .keep_all = TRUE)
+
+#
+system("bedtools intersect -a Exoma_HGUGM.bed -b GENE_BBDD.bed > intersect.bed")
+
+
