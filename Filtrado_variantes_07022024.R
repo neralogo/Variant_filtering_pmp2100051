@@ -2,8 +2,6 @@
 #madre e hijo.
 
 library(dplyr)
-install.packages("devtools")
-devtools::install_github("PhanstielLab/bedtoolsr")
 
 #Después de cargar la base de Genes de TEA y la de biomart, eliminamos la única
 #instancia de gen que no tiene nombre. Tampoco consta en la base de biomart por
@@ -58,10 +56,71 @@ write.table(GENES_FILTRADO, "GENES_FILTRADO.bed", sep = "\t", quote = F,
 
 G01.GEA.10.HI.split.tab$Start <- G01.GEA.10.HI.split.tab$Start -1 
 G01.GEA.10.HI.split.tab$Chr <- paste0("chr", G01.GEA.10.HI.split.tab$Chr)
-write.table(G01.GEA.10.HI.split.tab, "Prueba_pac10.bed", sep = "\t", quote = FALSE, 
+write.table(G01.GEA.10.HI.split.tab, "GEA10HI.bed", sep = "\t", quote = FALSE, 
             row.names = FALSE, col.names = FALSE)
 
-#
-system("bedtools intersect -a Prueba_pac10.bed -b GENES_FILTRADO.bed > intersect.bed")
+G01.GEA.10.MA.split.tab$Start <- G01.GEA.10.MA.split.tab$Start -1 
+G01.GEA.10.MA.split.tab$Chr <- paste0("chr", G01.GEA.10.MA.split.tab$Chr)
+write.table(G01.GEA.10.MA.split.tab, "GEA10MA.bed", sep = "\t", quote = FALSE, 
+            row.names = FALSE, col.names = FALSE)
 
+G01.GEA.10.PA.split.tab$Start <- G01.GEA.10.PA.split.tab$Start -1 
+G01.GEA.10.PA.split.tab$Chr <- paste0("chr", G01.GEA.10.PA.split.tab$Chr)
+write.table(G01.GEA.10.PA.split.tab, "GEA10PA.bed", sep = "\t", quote = FALSE, 
+            row.names = FALSE, col.names = FALSE)
+
+rm(G01.GEA.10.HI.split.tab)
+rm(G01.GEA.10.MA.split.tab)
+rm(G01.GEA.10.PA.split.tab)
+
+system("bedtools intersect -a GEA10_HI.bed -b GENES_FILTRADO.bed > GEA10_HI_intersect.bed")
+system("bedtools intersect -a GEA10_MA.bed -b GENES_FILTRADO.bed > GEA10_MA_intersect.bed")
+system("bedtools intersect -a GEA10_PA.bed -b GENES_FILTRADO.bed > GEA10_PA_intersect.bed")
+
+
+temporal <- colnames(G01.GEA.10.HI.split.tab)
+colnames(GEA10_HI_intersect) <- temporal
+colnames(GEA10_MA_intersect) <- temporal
+colnames(GEA10_PA_intersect) <- temporal
+rm(temporal)
+rm(genes_faltantes)
+rm(genes_intersect)
+rm(filtered_mart_export)
+rm(GENES_DIAG_TEA)
+rm(mart_export)
+rm(mart_export_csv)
+rm(genes_no_dup)
+
+# Function to categorize variants based on conditions
+categorize_variant <- function(row, mother_data, father_data) {
+  variant_key <- paste0(row[1], "_", row[2])  # Assuming Start is in the first column and End is in the second
+  
+  is_de_novo <- is.na(match(variant_key, paste0(mother_data$Start, "_", mother_data$End))) &&
+    is.na(match(variant_key, paste0(father_data$Start, "_", father_data$End)))
+  
+  is_heredada_MA <- !is_de_novo && !is.na(match(variant_key, paste0(mother_data$Start, "_", mother_data$End)))
+  is_heredada_PA <- !is_de_novo && !is.na(match(variant_key, paste0(father_data$Start, "_", father_data$End)))
+  
+  if (is_de_novo) {
+    return("de novo")
+  } else if (is_heredada_MA && is_heredada_PA) {
+    return("heredada_MA_PA")
+  } else if (is_heredada_MA) {
+    return("heredada_MA")
+  } else if (is_heredada_PA) {
+    return("heredada_PA")
+  }
+}
+
+# Assuming "Start" and "End" are in the first and second columns of patient_data
+# Apply the categorize_variant function to create a new column in patient_data
+GEA10_HI_intersect$Variant_Category <- apply(GEA10_HI_intersect[, c("Start", "End")], 1, 
+                                             categorize_variant, GEA10_MA_intersect, GEA10_PA_intersect)
+
+# Print the updated patient_data
+print(GEA10_HI_intersect$Variant_Category)
+
+# Move the "Variant_Category" column to the 7th position
+GEA10_HI_intersect <- GEA10_HI_intersect %>%
+  select(1:6, Variant_Category, everything())
 
